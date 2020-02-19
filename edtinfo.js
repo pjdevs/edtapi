@@ -89,8 +89,12 @@ function read() {
 
         let course = getNextCourse(result)
         let date = getCourseDate(course, result)
-        console.log('Le prochain cours est ' + getCourseName(course) + ' à ' + date.getHours() + ':' + date.getMinutes())   
-
+        let phrase = 'Le prochain cours est ' + getCourseName(course) + ' à ' + date.getHours() + ' heures'
+        if (date.getMinutes() != 0) {
+            phrase += ' ' + date.getMinutes()
+        }
+        
+        process.stdout.write(phrase + '\n')
         })
     })
 }
