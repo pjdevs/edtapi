@@ -1,0 +1,15 @@
+{
+  "name": "edtapi",
+  "version": "1.0.0",
+  "description": "API to fetch my EDT",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "pjdevs",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "xml2js": "^0.4.23"
+  }
+}
