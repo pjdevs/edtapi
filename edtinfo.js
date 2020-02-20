@@ -71,11 +71,17 @@ function getNextCourse(result) {
         return todayCourses[0]
     }
     else {
-        todayCourses.forEach((course) => {
-            if (getStartTime(course) < getCurrentTime() && getCurrentTime() < getEndTime(course)) {
-                return course
+        let less = 99999999
+        let index = 0
+
+        todayCourses.forEach((course, i) => {
+            if (getStartTime(course) > getCurrentTime() && getStartTime(course) < less) {
+                less = getStartTime(course)
+                index = i
             }
         })
+
+        return todayCourses[index]
     }
 }
 
