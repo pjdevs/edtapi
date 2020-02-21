@@ -35,29 +35,30 @@ function getCourseDate(course, result) {
     return d
 }
 
-function getStartTime(course) {
+function getStartTimeMinutes(course) {
     let h = course['starttime'].split(':')
     return parseInt(h[0])*60+parseInt(h[1])
 }
 
-function getEndTime(course) {
+function getEndTimeMinutes(course) {
     let h = course['endtime'].split(':')
     return parseInt(h[0])*60+parseInt(h[1])
+}
+
+function getRealEndTime(course) {
+    let h = course['endtime'].split(':')
+    if (parseInt(h[1]) != 0) 
+        return h[0] + ' heures ' + h[1]
+    else return h[0] + ' heures'
 }
 
 function getCurrentTime() {
     return date.getHours()*60+date.getMinutes()
 }
 
-function getNextCourse(result) {
+function getTodayCourses(result) {
     let courses = result['timetable']['event']
     let todayCourses = []
-    let takeFist = false
-
-    if (hour >= 17) {
-        takeFist = true
-        day += 1
-    }
 
     courses.forEach(course => {
         let courseDate = getCourseDate(course, result)
@@ -67,16 +68,28 @@ function getNextCourse(result) {
         }
     })
 
-    if (takeFist) {
-        return todayCourses[0]
+    return todayCourses
+}
+
+function getNextCourse(result) {
+    let todayCourses = getTodayCourses(result)
+
+    let takeFist = false
+    if (hour >= 17) { //On est en fin de journée
+        takeFist = true
+        day += 1
     }
-    else {
+
+    if (takeFist) {
+        return todayCourses[0] //On a les cours du lendemain donc on prend le premier
+    }
+    else { //Sinon on récup le plus proche de l'heure actuelle
         let less = 99999999
         let index = 0
 
         todayCourses.forEach((course, i) => {
-            if (getStartTime(course) > getCurrentTime() && getStartTime(course) < less) {
-                less = getStartTime(course)
+            if (getStartTimeMinutes(course) > getCurrentTime() && getStartTimeMinutes(course) < less) {
+                less = getStartTimeMinutes(course)
                 index = i
             }
         })
@@ -85,7 +98,7 @@ function getNextCourse(result) {
     }
 }
 
-function read() {
+function read(callback) {
     fs.readFile(path, (err, data) => {
         if (err) throw err
 
@@ -93,36 +106,39 @@ function read() {
         parser.parseString(data, (err, result) => {
             if (err) throw err
 
-        let course = getNextCourse(result)
-        let date = getCourseDate(course, result)
-        let phrase = 'Le prochain cours est ' + getCourseName(course) + ' à ' + date.getHours() + ' heures'
-        if (date.getMinutes() != 0) {
-            phrase += ' ' + date.getMinutes()
-        }
-        
-        process.stdout.write(phrase + '\n')
+            callback(result)
         })
     })
 }
 
-if (!(fs.existsSync(path))) {
-    http.get(url, res => {
-        let data = ''
+//Main part
+function get(callback) {
+    if (!(fs.existsSync(path))) {
+        http.get(url, res => {
+            let data = ''
 
-        res.on('data', chunck => {
-            data += chunck
-        })
+            res.on('data', chunck => {
+                data += chunck
+            })
 
-        res.on('end', () => {
-            fs.writeFileSync(path, data)
-            read()
-        })
+            res.on('end', () => {
+                fs.writeFileSync(path, data)
+                read(callback)
+            })
 
-        res.on('error', err => {
-            throw err
+            res.on('error', err => {
+                throw err
+            })
         })
-    })
+    }
+    else {
+        read(callback)
+    }
 }
-else {
-    read()
-}
+
+exports.get = get
+exports.getNextCourse = getNextCourse
+exports.getCourseDate = getCourseDate
+exports.getTodayCourses = getTodayCourses
+exports.getCourseName = getCourseName
+exports.getEndTime = getRealEndTime
